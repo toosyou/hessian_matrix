@@ -1,15 +1,10 @@
 #ifndef TOMO_TIFF
 #define TOMO_TIFF
 
-#include <tiffio.h>
 #include <iostream>
 #include <string>
 #include <vector>
 #include <fstream>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
 #include <cstdio>
 #include <cstdlib>
 #include <cmath>
@@ -19,8 +14,8 @@
 #include <sstream>
 
 extern "C"{
-    #include <progressbar.h>
-    #include <statusbar.h>
+#include "progressbar.h"
+#include "statusbar.h"
 }
 
 #include <omp.h>
@@ -30,7 +25,7 @@ extern "C"{
 
 using namespace std;
 
-class tomo_super_tiff;
+class volume;
 
 void merge_measurements(const char* address_filelist, const char* prefix_output);
 
@@ -41,7 +36,7 @@ float vector_length(vector<float> &a);
 
 void create_experimental_data(const char* address);
 
-class tomo_tiff{
+class slice{
 
     string address_;
     unsigned int height_;
@@ -49,27 +44,18 @@ class tomo_tiff{
     uint8_t bits_per_sample_;
     int samples_per_pixel_;
 
-    /*int color_map_;
-    int compression_;
-    int photometric_;
-    int xresolution_;
-    int yresolution_;
-    int resolutionunit_;
-    int planarconfig_;
-    int orientation_;*/
-
     vector< vector<float> > gray_scale_;
 
     public:
 
-    tomo_tiff(){
+    slice(){
         this->height_ = -1;
         this->width_ = -1;
         this->bits_per_sample_ = 0;
         this->samples_per_pixel_ = -1;
         this->gray_scale_.clear();
     }
-    tomo_tiff(vector< vector<float> >& data){
+    slice(vector< vector<float> >& data){
         this->gray_scale_ = data;
         this->height_ = data.size();
         this->width_ = data[0].size();
@@ -77,9 +63,6 @@ class tomo_tiff{
         this->samples_per_pixel_ = 1;
     }
 
-    tomo_tiff(const char* address);
-
-    void save(const char* address, int max_gray_scale = 65535);
     vector<float>& operator [](int index_y);
     int size(void){return this->gray_scale_.size();}
     void resize(int size){
@@ -90,7 +73,7 @@ class tomo_tiff{
         this->gray_scale_.clear();
     }
 
-    friend class tomo_super_tiff;
+    friend class volume;
 
 };
 
@@ -188,11 +171,10 @@ class matrix{
     }
 };
 
-class tomo_super_tiff{
+class volume{
 
     string prefix_;
-    vector<string> address_tiffs_;
-    vector<tomo_tiff> tiffs_;//[z][y][x]
+    vector<slice> intensity_;//[z][y][x]
     vector< vector< vector<float> > > gaussian_window_;
     vector< vector< vector<matrix> > >differential_matrix_;
     vector< vector< vector<matrix> > >tensor_;
@@ -207,7 +189,6 @@ class tomo_super_tiff{
     void make_gaussian_window_(const int size, const float standard_deviation);
     void make_differential_matrix_();
     void make_tensor_(const int window_size);
-    void make_nobles_measure_(float measure_constant = 0.0);
     void make_eigen_values_();
 
     //serial process
@@ -215,9 +196,6 @@ class tomo_super_tiff{
     void make_tensor_(const int window_size, int index_z);
     void eigen_values_initialize_();
     void make_eigen_values_(int index_z);
-    void experimental_measurement_initialize_();
-    void experimental_measurement_normalize_();
-    void experimental_measurement_(int index_z, float thresholde);
 
     float Ix_(int x, int y, int z);
     float Iy_(int x, int y, int z);
@@ -227,27 +205,14 @@ class tomo_super_tiff{
 
     public:
 
-    void down_size(int magnification, const char* save_prefix, float sample_sd = 0.8);
+    volume(vector<vector<vector<float> > >);
+    volume(){}
 
-    tomo_super_tiff(const char* address_filelist);
-    tomo_super_tiff(){}
+    void calculate_hessian(const int window_size, float threshold = 0.0000015, const float standard_deviation=0.8);
 
-    void experimental_measurement(float threshold);
+    int size_original_data(void){return this->intensity_.size();}
 
-    void neuron_detection(const int window_size, float threshold = 0.0000015, const float standard_deviation=0.8);
-
-    void save_measure(const char* prefix);
-    void save_measure_merge(const char* prefix);
-    void save_eigen_values_rgb(const char* prefix);
-    void save_eigen_values_rgb_merge(const char* prefix);
-    void save_eigen_values_separated(const char* prefix);
-    void save_eigen_values_ev(const char* address);
-
-    void load_eigen_values_ev(const char* address);
-    void load_eigen_values_separated(const char* prefix);
-    int size_original_data(void){return this->tiffs_.size();}
-
-    //friend void merge_measurements(const char *address_filelist, const char *prefix_output);
+    vector< vector< vector< vector<float> > > > get_eigen_value(){return this->eigen_values_;}
 
 };
 
