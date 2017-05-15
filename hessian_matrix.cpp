@@ -122,7 +122,7 @@ float volume::summation_within_window_gaussianed_(int x, int y, int z, int size)
 void volume::make_differential_matrix_(){
 
     //init
-    progressbar *progress = progressbar_new("Initializing",this->intensity_.size());
+    //progressbar *//progress = //progressbar_new("Initializing",this->intensity_.size());
     differential_matrix_.resize(this->intensity_.size());
     #pragma omp parallel for
     for(int i=0;i<differential_matrix_.size();++i){
@@ -130,10 +130,10 @@ void volume::make_differential_matrix_(){
         for(int j=0;j<differential_matrix_[i].size();++j){
             differential_matrix_[i][j].resize(this->intensity_[i][j].size(),matrix(3,0));
         }
-        #pragma omp critical
-        progressbar_inc(progress);
+        //#pragma omp critical
+        //progressbar_inc(//progress);
     }
-    progressbar_finish(progress);
+    //progressbar_finish(//progress);
 
     /* differential_matrix      j->
      * __                           __
@@ -145,7 +145,7 @@ void volume::make_differential_matrix_(){
      * L_                           _|
      */
 
-    progress = progressbar_new("Calculating",this->intensity_.size());
+    //progress = //progressbar_new("Calculating",this->intensity_.size());
     #pragma omp parallel for
     for(int z=0;z<this->intensity_.size();++z){
         for(int y=0;y<this->intensity_[z].size();++y){
@@ -165,10 +165,10 @@ void volume::make_differential_matrix_(){
                 this_matrix[1][2] = this_matrix[2][1] = Iy*Iz;
             }
         }
-        #pragma omp critical
-        progressbar_inc(progress);
+        //#pragma omp critical
+        //progressbar_inc(//progress);
     }
-    progressbar_finish(progress);
+    //progressbar_finish(//progress);
 
     return;
 }
@@ -177,22 +177,22 @@ void volume::make_tensor_(const int window_size){
 
     //init
     this->tensor_.resize(this->differential_matrix_.size());
-    progressbar *progress = progressbar_new("Initializing",this->differential_matrix_.size());
+    //progressbar *//progress = //progressbar_new("Initializing",this->differential_matrix_.size());
     #pragma omp parallel for
     for(int i=0;i<this->tensor_.size();++i){
         this->tensor_[i].resize(this->differential_matrix_[i].size());
         for(int j=0;j<this->tensor_[i].size();++j){
             this->tensor_[i][j].resize(this->differential_matrix_[i][j].size());
         }
-        #pragma omp critical
-        progressbar_inc(progress);
+        //#pragma omp critical
+        //progressbar_inc(//progress);
     }
-    progressbar_finish(progress);
+    //progressbar_finish(//progress);
 
     // struct tensor A = sum_u_v_w( gaussian(u,v,w) * differential(u,v,w) )
 
     //for every points
-    progress = progressbar_new("Calculating",this->tensor_.size());
+    //progress = //progressbar_new("Calculating",this->tensor_.size());
     #pragma omp parallel for
     for(int z=0;z<this->tensor_.size();++z){
         for(int y=0;y<this->tensor_[z].size();++y){
@@ -219,10 +219,10 @@ void volume::make_tensor_(const int window_size){
                 this->tensor_[z][y][x] = temp;
             }
         }
-        #pragma omp critical
-        progressbar_inc(progress);
+        //#pragma omp critical
+        //progressbar_inc(//progress);
     }
-    progressbar_finish(progress);
+    //progressbar_finish(//progress);
 
     return;
 }
@@ -234,7 +234,7 @@ void volume::make_eigen_values_(){
     //init
     this->eigen_values_.resize(this->tensor_.size());
 
-    progressbar *progress = progressbar_new("Initializing",this->eigen_values_.size());
+    //progressbar *//progress = //progressbar_new("Initializing",this->eigen_values_.size());
     #pragma omp parallel for
     for(int i=0;i<this->eigen_values_.size();++i){
         this->eigen_values_[i].resize( this->tensor_[i].size() );
@@ -244,13 +244,13 @@ void volume::make_eigen_values_(){
                 this->eigen_values_[i][j][k].resize(3,0.0);
             }
         }
-        #pragma omp critical
-        progressbar_inc(progress);
+        //#pragma omp critical
+        //progressbar_inc(//progress);
     }
-    progressbar_finish(progress);
+    //progressbar_finish(//progress);
 
     //using gsl for eigenvalue
-    progress = progressbar_new("Calculating",this->tensor_.size());
+    //progress = //progressbar_new("Calculating",this->tensor_.size());
 
     #pragma omp parallel for
     for(int i=0;i<this->tensor_.size();++i){
@@ -290,10 +290,10 @@ void volume::make_eigen_values_(){
                 gsl_eigen_symmv_free(w);
             }
         }
-        #pragma omp critical
-        progressbar_inc(progress);
+        //#pragma omp critical
+        //progressbar_inc(//progress);
     }
-    progressbar_finish(progress);
+    //progressbar_finish(//progress);
 
     return ;
 }
@@ -403,7 +403,7 @@ void volume::eigen_values_initialize_(){
     //init
     this->eigen_values_.resize(this->intensity_.size());
 
-    progressbar *progress = progressbar_new("EigenValueInit",this->eigen_values_.size());
+    //progressbar *//progress = //progressbar_new("EigenValueInit",this->eigen_values_.size());
     #pragma omp parallel for
     for(int i=0;i<this->eigen_values_.size();++i){
         this->eigen_values_[i].resize( this->intensity_[i].size() );
@@ -415,10 +415,10 @@ void volume::eigen_values_initialize_(){
                 this->eigen_values_[i][j][k].resize(3,0.0);
             }
         }
-        #pragma omp critical
-        progressbar_inc(progress);
+        //#pragma omp critical
+        //progressbar_inc(//progress);
     }
-    progressbar_finish(progress);
+    //progressbar_finish(//progress);
 
     return;
 }
@@ -495,7 +495,7 @@ void volume::calculate_hessian(const int window_size, float threshold, const flo
     this->eigen_values_initialize_();
 
     //load data when needed, free it otherwise
-    progressbar *progress = progressbar_new("Calculating",this->intensity_.size());
+    //progressbar *//progress = //progressbar_new("Calculating",this->intensity_.size());
     for(int i=0;i<this->intensity_.size();++i){
 
         int number_z = window_size;
@@ -506,9 +506,9 @@ void volume::calculate_hessian(const int window_size, float threshold, const flo
         this->make_tensor_(window_size, i);
         this->make_eigen_values_(i);
 
-        progressbar_inc(progress);
+        //progressbar_inc(//progress);
     }
-    progressbar_finish(progress);
+    //progressbar_finish(//progress);
 
     return;
 }

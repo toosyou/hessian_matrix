@@ -13,12 +13,12 @@
 #include <iomanip>
 #include <sstream>
 
-extern "C"{
+/*extern "C"{
 #include "progressbar.h"
 #include "statusbar.h"
-}
+}*/
 
-#include <omp.h>
+//#include <omp.h>
 
 #define TIFF_IMAGE_MEDIUM_SIZE 500
 #define TIFF_IMAGE_LARGE_SIZE 1000
